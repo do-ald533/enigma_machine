@@ -1,22 +1,37 @@
-use druid::widget::{Button, Flex, Label};
-use druid::{AppLauncher, LocalizedString, PlatformError, Widget, WidgetExt, WindowDesc};
+use druid::{
+    AppLauncher,
+    WidgetExt,
+    Widget,
+    Env,
+    UpdateCtx,
+    WindowDesc,
+    widget::TextBox,
+    widget::Controller
+};
 
-fn main() -> Result<(), PlatformError> {
-    let main_window = WindowDesc::new(ui_builder());
-    let data = 0_u32;
-    AppLauncher::with_window(main_window)
-        .log_to_console()
-        .launch(data)
+struct UpdateCallback();
+
+impl Controller<String, TextBox<String>> for UpdateCallback {
+    fn update(&mut self, 
+        child: &mut TextBox<String>, 
+        ctx: &mut UpdateCtx<'_, '_>, 
+        old_data: &String, 
+        data: &String, 
+        env: &Env
+    ) {
+        if old_data != data {
+            // the data has changed, you can call your function here
+            println!("{}", data);
+        }
+        // also inform the child that the data has changed
+        child.update(ctx, old_data, data, env)
+    }
 }
 
-fn ui_builder() -> impl Widget<u32> {
-    // The label text will be computed dynamically based on the current locale and count
-    let text =
-        LocalizedString::new("hello-counter").with_arg("count", |data: &u32, _env| (*data).into());
-    let label = Label::new(text).padding(5.0).center();
-    let button = Button::new("increment")
-        .on_click(|_ctx, data, _env| *data += 1)
-        .padding(5.0);
+fn build_root_widget() -> impl Widget<String> {
+    TextBox::new().controller(UpdateCallback())
+}
 
-    Flex::column().with_child(label).with_child(button)
+fn main() {
+    AppLauncher::with_window(WindowDesc::new(build_root_widget())).launch("Test".to_string()).unwrap();
 }
